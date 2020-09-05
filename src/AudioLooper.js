@@ -98,9 +98,7 @@ const AudioLooper = inject("yourStore")((props) => {
       <button class="styled reset" type="button" onClick={onReset}>
         Reset
       </button>
-      <AUdioGenerator>
-
-      </AUdioGenerator>
+      <AUdioGenerator/>
     </>
   )
 })
