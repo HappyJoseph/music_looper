@@ -23,17 +23,17 @@ export default class AudioGenerator extends Component {
     this.sineTerms = new Float32Array([0, 0, 1, 0, 1]);
     this.cosineTerms = new Float32Array(this.sineTerms.length);
     this.customWaveform = this.audioContext.createPeriodicWave(this.cosineTerms, this.sineTerms);
-  
-    this.noteFreq = this.createNoteTable();
 
-    this.oscList = this.createOscillator();
+    this.masterGainNode = this.audioContext.createGain();
+    this.masterGainNode.connect(this.audioContext.destination);
+    this.masterGainNode.gain.value = 10; //volumeControl.value;
+
+    this.createNoteTable();
+
+    this.createOscillator();
   
     // volumeControl.addEventListener("change", changeVolume, false);
-  
-    this.masterGainNode = audioContext.createGain();
-    this.masterGainNode.connect(audioContext.destination);
-    this.masterGainNode.gain.value = 10; //volumeControl.value;
-  
+ 
     // Create the keys; skip any that are sharp or flat; for
     // our purposes we don't need them. Each octave is inserted
     // into a <div> of class "octave".
@@ -76,10 +76,10 @@ export default class AudioGenerator extends Component {
       if (WAVE_TYPE[TYPE_OF_WAVE] == "custom") {
         osc.setPeriodicWave(customWaveform);
       } else {
-        osc.type = type;
+        osc.type = WAVE_TYPE[TYPE_OF_WAVE];
       }
     
-      osc.frequency.value = noteFreq[i];
+      osc.frequency.value = this.noteFreq[i];
       this.oscList.push(osc);
       this.oscStat.push(OSC_STOP);
     }
@@ -101,10 +101,12 @@ export default class AudioGenerator extends Component {
     }
 
     return osc;
-}
+  }
 
   render(){
-    <div>
-    </div>
+    return (
+      <div>
+      </div>
+    );
   }
 }
