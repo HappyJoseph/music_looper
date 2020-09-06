@@ -6,7 +6,6 @@ import Beats from './Beats';
 import { Interaction } from 'three.interaction';
 import { inject } from 'mobx-react';
 import './AudioLooper.scss';
-import AUdioGenerator from './AudioGenerator';
 import {
   CANVAS_SIZE,
   CAMERA_POS_Y,
@@ -98,7 +97,6 @@ const AudioLooper = inject("yourStore")((props) => {
       <button class="styled reset" type="button" onClick={onReset}>
         Reset
       </button>
-      <AUdioGenerator/>
     </>
   )
 })

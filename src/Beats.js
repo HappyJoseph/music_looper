@@ -1,6 +1,4 @@
-import React, {useEffect} from 'react';
-import * as THREE from 'three';
-import { Object3D, Vector3, LogLuvEncoding } from 'three';
+import AudioGenerator from './AudioGenerator';
 import {
   STATE_PAUSE,
   STATE_PRE_RECORDING,
@@ -42,26 +40,35 @@ class Beat {
       }
     }
   }
+
+  recordEnd = () => {
+    if (this.data[this.data.length - 1].action === ACTION_DOWN){
+      this.data.splice(this.data.length - 1, 1);
+    }
+  }
 }
 
 export default class Beats {
   constructor(props) {
     this.props = props;
-    var {setRecording} = props.yourStore;
+    this.audioGenerator = new AudioGenerator();
+    var {setRecording} = this.props.yourStore;
     this.setRecording = setRecording;
 
     this.init();
+    this.genSignal();
   }
 
   init = () => {
     this.beat = NUM_OF_BIT_BUTTONS;
     this.beats = [];
     this.beatsPos = [];
+    this.beatsEnd = [];
     this.tmpBeat = null;
     this.state = STATE_PAUSE;
     this.keyState = ACTION_UP;
     this.keyType = 0;
-    this.timeStart = 0;
+    this.timeStart = [];
     this.timeEnd = 0;
   }
 
@@ -74,27 +81,35 @@ export default class Beats {
     if (this.state === STATE_PAUSE) {
       this.state = STATE_PRE_RECORDING;
       this.tmpBeat = new Beat();
-      this.beats.push(this.tmpBeat);
-      this.beatsPos.push(0);
     } 
   }
 
   stopRecording = () => {
     console.log('stop');
-    this.state = STATE_PAUSE;
-    this.keyState = ACTION_UP;
-    this.setRecording(false); 
+    if (this.state !== STATE_PAUSE) {
+      this.keyState = ACTION_UP;
+      this.setRecording(false); 
+      this.state = STATE_PAUSE;
+      this.beatsPos.push(0);
+      this.beatsEnd.push(false);
+      this.timeStart.push(this.getGlobalStartTime());
+      this.tmpBeat.recordEnd();
+      this.beats.push(this.tmpBeat);
+    }
   }
 
   recordingTimeout = () => {
     console.log('timeout');
-    this.state = STATE_PAUSE;
-    this.keyState = ACTION_UP;
-    this.setRecording(false);
-    console.log(this.beats);
-  }
-
-  getAllBeatsState = () => {
+    if (this.state !== STATE_PAUSE) {
+      this.state = STATE_PAUSE;
+      this.keyState = ACTION_UP;
+      this.setRecording(false);
+      this.beatsPos.push(0);
+      this.beatsEnd.push(false);
+      this.timeStart.push(this.getGlobalStartTime());
+      this.tmpBeat.recordEnd();
+      this.beats.push(this.tmpBeat);
+    }
   }
 
   down = (timeDown, type) => {
@@ -102,23 +117,48 @@ export default class Beats {
     this.keyType = type;
     if (this.state === STATE_PRE_RECORDING) {
       setTimeout(this.recordingTimeout, MILI_PER_ONE_ROTATION);
-      this.tmpBeat.down((timeDown - this.timeStart) % MILI_PER_ONE_ROTATION, type);
+      this.tmpBeat.down((timeDown - this.getGlobalStartTime()) % MILI_PER_ONE_ROTATION, type);
       this.state = STATE_RECORDING;
     } else if (this.state === STATE_RECORDING && this.tmpBeat){
-      this.tmpBeat.down((timeDown - this.timeStart) % MILI_PER_ONE_ROTATION - this.timeStart, type);
+      this.tmpBeat.down((timeDown - this.getGlobalStartTime()) % MILI_PER_ONE_ROTATION, type);
     }
+    this.audioGenerator.notePressed(type);
   }
 
   up = (timeUp, type) => {
     this.keyState = ACTION_UP;
     this.keyType = type;
     if (this.state !== STATE_PAUSE && this.tmpBeat){
-      this.tmpBeat.up((timeUp - this.timeStart) % MILI_PER_ONE_ROTATION, type);
+      this.tmpBeat.up((timeUp - this.getGlobalStartTime()) % MILI_PER_ONE_ROTATION, type);
     }
-    console.log('ddddd', this.beats);
+    this.audioGenerator.noteReleased(type);
   }
 
   reset = () => {
     this.init();
   }
+
+  genSignal = () => {
+    for (var i = 0; i < this.beats.length; i++) {
+      var data = this.beats[i].data;
+      var data2 = data[this.beatsPos[i]];
+      if (this.beatsEnd[i] && Date.now() - this.timeStart[i] > MILI_PER_ONE_ROTATION) {
+        this.timeStart[i] = Date.now();
+        this.beatsEnd[i] = false;
+      }
+
+      if (!this.beatsEnd[i] && data2.time < (Date.now() - this.timeStart[i]) % MILI_PER_ONE_ROTATION) {
+        if (data2.action === ACTION_UP) {
+          this.audioGenerator.noteReleased(data2.type);
+        } else {
+          this.audioGenerator.notePressed(data2.type);
+        }
+
+        this.beatsPos[i] = (this.beatsPos[i] + 1) % data.length;
+        var data3 = data[this.beatsPos[i]];
+        if (data2.time > data3.time) this.beatsEnd[i] = true;
+      } 
+    }
+    setTimeout(this.genSignal, 5);
+  }  
 }
