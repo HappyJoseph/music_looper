@@ -4,10 +4,11 @@ import { Object3D } from 'three';
 import {
   STATE_PAUSE,
   ACTION_DOWN,
-  COLOR_PALETTE,
+  NUM_OF_BIT_BUTTONS, 
+  KEY_COLOR_PALETTE,
+  NUM_OF_DRUM_BUTTONS,
+  DRUM_COLOR_PALETTE,
   MILI_PER_ONE_ROTATION,
-  NUM_OF_SAMPLES,
-  
 } from './Constant';
 
 
@@ -48,7 +49,12 @@ export const render = () => {
       if (recTorus === null) {
         recStartTime = Date.now();
         var geometry = new THREE.TorusGeometry( 100 + beats.beats.length * 40, 10, 16, 50, 0.0001);
-        var material = new THREE.MeshBasicMaterial( { color: COLOR_PALETTE[beats.keyType] } );
+        var material = null;
+        if (beats.keyType < NUM_OF_BIT_BUTTONS) {
+           material = new THREE.MeshBasicMaterial( { color: KEY_COLOR_PALETTE[beats.keyType] } );
+        } else {
+          material = new THREE.MeshBasicMaterial( { color: DRUM_COLOR_PALETTE[beats.keyType - NUM_OF_BIT_BUTTONS] } );
+        }
         var torus  = new THREE.Mesh( geometry, material );
         torus.rotateX(PId2);
         torus.rotateZ(PId2);
