@@ -42,7 +42,7 @@ class Beat {
   }
 
   recordEnd = () => {
-    if (this.data[this.data.length - 1].action === ACTION_DOWN){
+    if (this.data.length > 0 && this.data[this.data.length - 1].action === ACTION_DOWN){
       this.data.splice(this.data.length - 1, 1);
     }
   }
