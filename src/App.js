@@ -7,7 +7,7 @@ function App() {
     <div className="App">
       <header className="App-header">
         <div>
-          <h3>Mix music bit and make fun sound</h3>
+          <h3>Mix music beats and make fun sound</h3>
         </div>
       </header>
       <AudioLooper></AudioLooper>
